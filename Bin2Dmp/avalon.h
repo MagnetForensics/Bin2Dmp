@@ -94,8 +94,6 @@ Revision History:
 #include "text.h"
 #include "md5.h"
 
-#define LIBRARY_VERSION L"v2.1.1.20140523"
-
 #pragma comment(lib, "dbghelp.lib" )
 
 // #pragma comment(lib, "Cabinet.lib" )

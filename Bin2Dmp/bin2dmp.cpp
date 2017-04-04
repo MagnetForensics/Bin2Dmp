@@ -25,52 +25,35 @@ Revision History:
 #include "stdafx.h"
 #include "avalon.h"
 
-#define APPLICATION_NAME L"bin2dmp"
-#define APPLICATION_DESC L"Convert raw memory dump images into Microsoft crash dump files."
-
-#ifdef PRO_EDITION
-#define APPLICATION_EDITION L"Professional Edition"
-#define LICENSE_TYPE L" - Single User Licence"
-#else
-#define APPLICATION_EDITION L"Community Edition"
-#define LICENSE_TYPE L""
+#ifndef COMAE_TOOLKIT_VERSION
+#define COMAE_TOOLKIT_VERSION "3.0.0.undefined"
 #endif
 
 VOID
 Help()
 {
-    wprintf(L"Usage: " APPLICATION_NAME L" <input file> <output file>\n"
-            L"\n"
-            L"  - <input file>      Source path of the raw memory dump file.\n"
-            L"  - <output file>     Destination path of the Microsoft crash dump file.\n\n");
+    wprintf(L"Usage: Bin2Dmp <input file> <output file>\n\n");
 
-#ifdef COMMUNITY_EDITION
-    Red(L"Note:\n"
-            L"   Community Edition only supports 32-bits Microsoft hibernation file of\n"
-            L"   Windows XP, 2003, 2008 and Vista.\n\n");
-#endif
+    wprintf(L"Description:\n"
+            L"  Converts raw memory dump images into Microsoft crash dump files.\n\n");
 
-    Green(L"   Professional Edition supports x86 and x64 raw memory files from Windows XP to 7.\n");
-
-#ifdef COMMUNITY_EDITION
-    White(L"   More information available on http://www.moonsols.com\n");
-#endif
+    wprintf(L"Options:\n"
+            L"  <input file>      Source path of the raw memory dump file.\n"
+            L"  <output file>     Destination path of the Microsoft crash dump file.\n");
 }
 
 int wmain(UINT argc, LPCWSTR argv[])
 {
-HANDLE BinFile, CrashDumpFile;
-BOOL Ret;   
+    HANDLE BinFile, CrashDumpFile;
+    BOOL Ret;   
+    ULONG StartTime, EndTime;
 
-ULONG StartTime, EndTime;
-
-    White(L"\n"
-            L"  " APPLICATION_NAME L" - " LIBRARY_VERSION L"\n"
-            L"  " APPLICATION_DESC L"\n"
-            L"  Copyright (C) 2007 - 2014, Matthieu Suiche <http://www.msuiche.net>\n"
+    wprintf(L"\n"
+            L"  Bin2Dmp %S\n"
+            L"  Copyright (C) 2007 - 2017, Matthieu Suiche <http://www.msuiche.net>\n"
             L"  Copyright (C) 2012 - 2014, MoonSols Limited <http://www.moonsols.com>\n"
-//            L"  User " USER_NAME L", " COMPANY_NAME L" (" COUNTRY_CODE L")\n"
-            L"\n");
+            L"  Copyright (C) 2015 - 2017, Comae Technologies FZE <http://www.comae.io>\n\n",
+            COMAE_TOOLKIT_VERSION);
 
     if (argc < 3)
     {
