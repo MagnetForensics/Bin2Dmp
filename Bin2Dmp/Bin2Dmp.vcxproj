@@ -168,6 +168,7 @@
     <ClInclude Include="mm.h" />
     <ClInclude Include="pe.h" />
     <ClInclude Include="phys.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="symbols.h" />
     <ClInclude Include="targetver.h" />
@@ -197,6 +198,9 @@
     <ClCompile Include="todmp.cpp" />
     <ClCompile Include="translate.cpp" />
     <ClCompile Include="validate.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Bin2Dmp.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
