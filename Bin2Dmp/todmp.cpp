@@ -221,7 +221,7 @@ Return Value:
 
     RtlZeroMemory(Header32->Comment, sizeof(Header32->Comment));
     strcpy_s(Header32->Comment, sizeof(Header32->Comment),
-        "Microsoft Crash Dump file generated with MoonSols Memory Toolkit - More information on http://www.moonsols.com");
+        "Microsoft Crash Dump file generated with Comae Toolkit - More information on http://www.comae.io");
 
     Offset.QuadPart = 0;
     CacheOffset = 0;
@@ -660,7 +660,7 @@ Return Value:
 
     RtlZeroMemory(Header64->Comment, sizeof(Header64->Comment));
     strcpy_s(Header64->Comment, sizeof(Header64->Comment),
-        "Hibernation file converted with MoonSols Memory Toolkit");
+        "Hibernation file converted with Comae Toolkit");
 
     Offset.QuadPart = 0;
     CacheOffset = 0;
