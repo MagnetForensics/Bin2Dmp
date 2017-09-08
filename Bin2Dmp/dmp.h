@@ -78,11 +78,8 @@ typedef struct _DUMP_HEADER32 {
         PHYSICAL_MEMORY_DESCRIPTOR32 PhysicalMemoryBlock;
         UCHAR PhysicalMemoryBlockBuffer[700];
     };
-    union {
-        CONTEXT Context;
-        UCHAR ContextRecord[1200];
-    };
-    EXCEPTION_RECORD ExceptionRecord;
+    UCHAR ContextRecord[1200];
+    EXCEPTION_RECORD32 ExceptionRecord;
     CHAR Comment[128];
     UCHAR reserved0[1768];
     ULONG DumpType;
