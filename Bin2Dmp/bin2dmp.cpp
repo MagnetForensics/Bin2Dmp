@@ -1,6 +1,7 @@
 /*++
     Copyright (C) 2010 Matthieu Suiche http://www.msuiche.net 
     Copyright (C) 2010 MoonSols. <http://www.moonsols.com>
+    Copyright (c) 2017 - 2018, Comae Technologies DMCC
     All rights reserved.
 
 Module Name:
@@ -52,7 +53,8 @@ int wmain(UINT argc, LPCWSTR argv[])
             L"  Bin2Dmp %S\n"
             L"  Copyright (C) 2007 - 2017, Matthieu Suiche <http://www.msuiche.net>\n"
             L"  Copyright (C) 2012 - 2014, MoonSols Limited <http://www.moonsols.com>\n"
-            L"  Copyright (C) 2015 - 2017, Comae Technologies FZE <http://www.comae.io>\n\n",
+            L"  Copyright (C) 2015 - 2017, Comae Technologies FZE <http://www.comae.io>\n",
+            L"  Copyright (C) 2017 - 2018, Comae Technologies DMCC <http://www.comae.io>\n\n",
             COMAE_TOOLKIT_VERSION);
 
     if (argc < 3)

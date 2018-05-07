@@ -2,6 +2,7 @@
     Windows Memory Dumper - Win32dd/Win64dd
     Copyright (C) 2008-2009 Matthieu Suiche http://www.msuiche.net 
     Copyright (C) 2009 MoonSols. All rights reserved.
+    Copyright (c) 2017 - 2018, Comae Technologies DMCC
 */
 
 //
