@@ -43,7 +43,7 @@ Revision History:
 #define PRO_EDITION
 
 
-#define FORCE_DEBUG_MODE 0
+#define FORCE_DEBUG_MODE 1
 
 #if defined(PRO_EDITION)
 #define DEBUG_ENABLED FORCE_DEBUG_MODE

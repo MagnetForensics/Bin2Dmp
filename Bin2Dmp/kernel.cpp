@@ -34,50 +34,52 @@ Revision History:
 EXCALIBUR_DATA g_KiExcaliburData = {0};
 
 ULONGLONG KernelCr3[] = {
-    //
-    // NT 5.0, Windows 2000
-    //
-    0ULL, // 0x0039000ULL,
+	//
+	// NT 5.0, Windows 2000
+	//
+	0ULL, // 0x0039000ULL,
 
-    //
-    // NT 5.1, Windows XP
-    //
-    0x0039000ULL, // (x86)
+	//
+	// NT 5.1, Windows XP
+	//
+	0x0039000ULL, // (x86)
 
-    //
-    // NT 5.2, Windows 2003 and XP 64-bits
-    //
-    0x0039000ULL, // (x86, Windows 2003 Server)
-    0ULL, // (amd64, Windows XP Professional x64 Edition)
-    0ULL, // (IA64, Windows XP 64-bit Edition)
-    // Maybe Home Server too
+	//
+	// NT 5.2, Windows 2003 and XP 64-bits
+	//
+	0x0039000ULL, // (x86, Windows 2003 Server)
+	0ULL, // (amd64, Windows XP Professional x64 Edition)
+	0ULL, // (IA64, Windows XP 64-bit Edition)
+	// Maybe Home Server too
 
-    //
-    // NT 6.0, Windows Vista and Windows 2008
-    //
-    0x00122000ULL, // (x86)
+	//
+	// NT 6.0, Windows Vista and Windows 2008
+	//
+	0x00122000ULL, // (x86)
 #ifdef PRO_EDITION
-    0x00124000ULL, // (amd64)
+	0x00124000ULL, // (amd64)
 #else
-    0x0ULL,
+	0x0ULL,
 #endif
-    0ULL, // (IA64)
+	0ULL, // (IA64)
 
-    //
-    // NT 6.1, Windows 7 and Windows 2008 R2
-    // NT 6.2  Windows 8
-    //
+	//
+	// NT 6.1, Windows 7 and Windows 2008 R2
+	// NT 6.2  Windows 8
+	//
 #ifdef PRO_EDITION
-    0x00185000ULL, // (x86)
-    0x00187000ULL, // (amd64)
-    // 0x1A7000ULL // (amd64)
+	0x00185000ULL, // (x86)
+	0x00187000ULL, // (amd64)
+	// 0x1A7000ULL // (amd64)
 #else
-    0x0ULL,
-    0x0ULL,
+	0x0ULL,
+	0x0ULL,
 #endif
-    0ULL, // (IA64)
+	0ULL, // (IA64)
 
-    // 0x001a5000ULL // Win 9 // 6.3.6374
+	// 0x001a5000ULL // Win 9 // 6.3.6374
+	0x1ad000ULL, //Windows Server 2019 PreBuild 17666 and Windows 10 17666 (1803)
+	0x4d2000ULL, //Windows 10 17666 (1804)
 };
 
 ULONGLONG KernelKPCR[] = {
@@ -582,12 +584,15 @@ Return Value:
         }
 #ifdef PRO_EDITION
         else if ((VersionId == WINDOWS_NT60_X64) ||
-                 (VersionId == WINDOWS_NT61_X64))
+                 (VersionId == WINDOWS_NT61_X64) ||
+				 (VersionId == WINDOWS_NT10_x64_1803) ||
+				 (VersionId == WINDOWS_NT10_x64_1804)
+				 )
         {
             if (!KernelCr3[VersionId]) continue;
 
 #if DEBUG_ENABLED
-                wprintf(L"(VersionId == WINDOWS_NT60_X64 || WINDOWS_NT61_X64)\n");
+                wprintf(L"(VersionId == WINDOWS_NT60_X64 || WINDOWS_NT61_X64) || WINDOWS_NT10_X64_1803\n");
 #endif
 
             Pa.QuadPart = KernelCr3[VersionId];
@@ -626,6 +631,11 @@ Return Value:
                 g_KiExcaliburData.MajorVersion = 6;
                 g_KiExcaliburData.MinorVersion = 1;
             }
+			else if (VersionId == WINDOWS_NT10_x64_1803 || VersionId == WINDOWS_NT10_x64_1804)
+			{
+				g_KiExcaliburData.MajorVersion = 10;
+				g_KiExcaliburData.MinorVersion = 0;
+			}
 
             goto success;
         }
@@ -731,7 +741,7 @@ success:
 
     if (bValidTable)
     {
-        White(L"Looking for kernel variables... ");
+        White(L"Looking for kernel variables... \n");
         Ret = KeFindDbgDataBlock(Handle, g_KiExcaliburData.KernelBase);
         if (Ret == TRUE)
         {
@@ -981,26 +991,46 @@ KeGetTimerValues(
             Index += sizeof(USHORT) + sizeof(UCHAR);
 
             DeltaOffset = (pKeSetTimer[Index + 3] << 24) | (pKeSetTimer[Index + 2] << 16) | (pKeSetTimer[Index + 1] << 8) | pKeSetTimer[Index];
-            // wprintf(L"DeltaOffset = %x\n", DeltaOffset);
+            wprintf(L"DeltaOffset = %x\n", DeltaOffset);
             DeltaValue = 0xFFFFFFFF00000000;
             DeltaValue += DeltaOffset;
 
-            if (DeltaOffset >= 0x80000000) KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
-            else KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
+            if (DeltaOffset >= 0x80000000) 
+				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
+            else 
+				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
 
-            switch (ValueCount)
-            {
-                case 0:
-                    // wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
-                    pKiWaitNever = KdMagicValue;
-                break;
-                case 1:
-                    // wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
-                    pKiWaitAlways = KdMagicValue;
-                break;
-            }
+			if (g_KiExcaliburData.MajorVersion == 10) { // for Windows 10 1803
+				switch (ValueCount)
+				{
+				case 0:
+					wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+					pKiWaitNever = KdMagicValue;
+					break;
+				case 1:
+					Index -= sizeof(USHORT) + sizeof(UCHAR) - 1;
+					break;
+				case 2:
+					wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+					pKiWaitAlways = KdMagicValue;
+					break;
+				}
+			}
 
-            ValueCount += 1;
+			if (g_KiExcaliburData.MajorVersion < 10) { // for Windows 10 1803
+				switch (ValueCount)
+				{
+				case 0:
+					wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+					pKiWaitNever = KdMagicValue;
+					break;
+				case 1:
+					wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+					pKiWaitAlways = KdMagicValue;
+					break;
+				}
+			}
+         ValueCount += 1;
         }
     }
 
@@ -1012,16 +1042,17 @@ KeGetTimerValues(
                                    KiWaitNever,
                                    sizeof(ULONG64));
         if (!Ret) goto CleanUp;
-        // wprintf(L"KiWaitNever = %I64X\n", *KiWaitNever);
+         wprintf(L"KiWaitNever = %I64X\n", *KiWaitNever);
     }
 
-    if (pKiWaitNever)
+    if (pKiWaitAlways)
     {
         Ret = MmReadVirtualAddress(Handle,
                                    0ULL,
                                    pKiWaitAlways,
                                    KiWaitAlways,
                                    sizeof(ULONG64));
+		wprintf(L"KiWaitAlways = %I64X\n", *KiWaitAlways);
         if (!Ret) goto CleanUp;
     }
 
@@ -1134,11 +1165,11 @@ KeGetDecodedKdbg(
 
     Ret = KeFindKernelBaseFromPointer(Handle, KernelImagePointer, &ImageBase);
     if (!Ret) goto CleanUp;
-    // wprintf(L"-> ImageBase = 0x%I64X\n", ImageBase);
+    wprintf(L"-> ImageBase = 0x%I64X\n", ImageBase);
 
     Ret = PeGetSection(Handle, ImageBase, (PUCHAR)".data", &DataSectionVa, &DataSectionOffset, &DataSectionSize);
     if (!Ret) goto CleanUp;
-    // wprintf(L"-> DataSectionVa = 0x%x DataSectionOffset = 0x%X DataSectionSize = 0x%X\n", DataSectionVa, DataSectionOffset, DataSectionSize);
+    wprintf(L"-> DataSectionVa = 0x%x DataSectionOffset = 0x%X DataSectionSize = 0x%X\n", DataSectionVa, DataSectionOffset, DataSectionSize);
 
     Data = (PULONG)malloc(DataSectionSize);
     if (Data == NULL) goto CleanUp;
@@ -1153,14 +1184,20 @@ KeGetDecodedKdbg(
 
     if (g_KiExcaliburData.MachineType == MACHINE_AMD64)
     {
-        KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");
+		if (g_KiExcaliburData.MajorVersion < 10) {
+			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");//
+		}
+
+		if (g_KiExcaliburData.MajorVersion == 10) {
+			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimerEx");// for Windows 10 1803
+		}
         if (KeSetTimer == 0ULL) goto CleanUp;
-        // wprintf(L"-> KeSetTimer = 0x%I64X\n", KeSetTimer);
+         wprintf(L"-> KeSetTimer = 0x%I64X\n", KeSetTimer);
 
         Ret = KeGetTimerValues(Handle, KeSetTimer, &KiWaitNever, &KiWaitAlways);
         if (Ret)
         {
-            // wprintf(L"-> KiWaitNever = 0x%I64X KiWaitAlways = 0x%I64X\n", KiWaitNever, KiWaitAlways);
+            wprintf(L"-> KiWaitNever = 0x%I64X KiWaitAlways = 0x%I64X\n", KiWaitNever, KiWaitAlways);
 
             DecodedData = (PULONG)malloc(DataSectionSize);
             if (DecodedData == NULL) goto CleanUp;
@@ -1184,17 +1221,17 @@ KeGetDecodedKdbg(
 
             g_KiExcaliburData.IsEncodedDbgDataBlock = TRUE;
 
-            // wprintf(L"KDBG signature found!\n");
+            wprintf(L"KDBG signature found!\n");
             KdDebuggerDataBlock = ImageBase + DataSectionVa + (i * sizeof(ULONG)) - sizeof(LIST_ENTRY64);
-            // wprintf(L"Mistaken: KdDebuggerDataBlock = %I64X\n", KdDebuggerDataBlock);
+            wprintf(L"Mistaken: KdDebuggerDataBlock = %I64X\n", KdDebuggerDataBlock);
             KdDebuggerDataBlock = (ImageBase & 0xffffffff00000000) | DecodedData[i - (sizeof(LIST_ENTRY64)/sizeof(ULONG))];
-            // wprintf(L"Real: KdDebuggerDataBlock = %I64X\n", KdDebuggerDataBlock);
+            wprintf(L"Real: KdDebuggerDataBlock = %I64X\n", KdDebuggerDataBlock);
             EncodedData = (PDBGKD_DEBUG_DATA_HEADER64)&Data[i - (sizeof(LIST_ENTRY64)/sizeof(ULONG))];
 
-            // wprintf(L"KdDebuggerDataBlock = 0x%I64x\n", KdDebuggerDataBlock);
+            wprintf(L"KdDebuggerDataBlock = 0x%I64x\n", KdDebuggerDataBlock);
 
             EncodedKdDebuggerDataBlock = ((PULONG64)EncodedData)[0];
-            // wprintf(L"KdDebuggerDataBlock = 0x%I64X\n[EncodedKdDebuggerDataBlock] = 0x%I64X\n", KdDebuggerDataBlock, EncodedKdDebuggerDataBlock);
+            wprintf(L"KdDebuggerDataBlock = 0x%I64X\n[EncodedKdDebuggerDataBlock] = 0x%I64X\n", KdDebuggerDataBlock, EncodedKdDebuggerDataBlock);
             FindKdpDataBlockEncodedOffset(EncodedKdDebuggerDataBlock, KdDebuggerDataBlock, KiWaitNever, KiWaitAlways, &KdpDataBlockEncodedOffset);
 
             KdCopyDataBlock_Decode((PULONG64)EncodedData, sizeof(DBGKD_DEBUG_DATA_HEADER64), (PULONG64)DecodedData, KiWaitNever, KiWaitAlways, KdpDataBlockEncodedOffset, FALSE);
@@ -1299,7 +1336,7 @@ Return Value:
     Page = (PULONG)malloc(PAGE_SIZE);
     if (Page == NULL) return Ret;
 
-    // wprintf(L"KeFindDbgDataBlock(): g_KiExcaliburData.MachineType = %d\n", g_KiExcaliburData.MachineType );
+    wprintf(L"KeFindDbgDataBlock(): g_KiExcaliburData.MachineType = %d\n", g_KiExcaliburData.MachineType );
 
     if (g_KiExcaliburData.MachineType == MACHINE_X86)
     {
@@ -1355,7 +1392,7 @@ TryAgain:
 
                         DbgData = (PKDDEBUGGER_DATA64)((PUCHAR)(&Page[DwIndex]) - sizeof(LIST_ENTRY64));
 
-                        // wprintf(L"DbgData->Header.Size = %X\n", DbgData->Header.Size);
+                        wprintf(L"DbgData->Header.Size = %X\n", DbgData->Header.Size);
                         if (DbgData->Header.Size >= 0x400) continue;
                         // wprintf(L"Step 1 . Ok\n");
 
@@ -1760,7 +1797,7 @@ BYTE PdbFileName[MAX_PATH];
         break;
         case MACHINE_AMD64:
             ImageBase = 0xfffff80000000000ULL;
-            for (Index = 0; Index < 0x10000; Index += 1, ImageBase += PAGE_SIZE)
+            for (Index = 0; Index < 0x1100000; Index += 1, ImageBase += PAGE_SIZE) // need add GetRawFileSize/PAGE_SIZE
             {
                 Ret = MmReadVirtualAddress(Handle,
                                            0ULL,
@@ -1774,6 +1811,8 @@ BYTE PdbFileName[MAX_PATH];
                     {
                         ULONG ImageSize;
                         ULONG DebugDirRva;
+
+						wprintf(L"\Scanning image Base: 0x%I64x \n", ImageBase);
 
                         Ret = PeGetPdbName(Handle,
                                            ImageBase,
