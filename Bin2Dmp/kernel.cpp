@@ -78,6 +78,8 @@ ULONGLONG KernelCr3[] = {
     0ULL, // (IA64)
 
     // 0x001a5000ULL // Win 9 // 6.3.6374
+	0x1ad000ULL, //Windows Server 2019 PreBuild 17666 and Windows 10 17666 (1803)
+	0x4d2000ULL, //Windows 10 17666 (1804)
 };
 
 ULONGLONG KernelKPCR[] = {
@@ -581,8 +583,11 @@ Return Value:
             goto success;
         }
 #ifdef PRO_EDITION
-        else if ((VersionId == WINDOWS_NT60_X64) ||
-                 (VersionId == WINDOWS_NT61_X64))
+      else if ((VersionId == WINDOWS_NT60_X64) ||
+                 (VersionId == WINDOWS_NT61_X64) ||
+				 (VersionId == WINDOWS_NT10_x64_1803) ||
+				 (VersionId == WINDOWS_NT10_x64_1804)
+				 )
         {
             if (!KernelCr3[VersionId]) continue;
 
@@ -974,33 +979,53 @@ KeGetTimerValues(
 
     // PeDumpHexa(pKeSetTimer, sizeof(pKeSetTimer));
 
-    for (Index = 0; Index < sizeof(pKeSetTimer); Index += 1)
+   for (Index = 0; Index < sizeof(pKeSetTimer); Index += 1)
     {
         if ((pKeSetTimer[Index] == 0x48) && (pKeSetTimer[Index + 1] == 0x8B))
         {
             Index += sizeof(USHORT) + sizeof(UCHAR);
 
             DeltaOffset = (pKeSetTimer[Index + 3] << 24) | (pKeSetTimer[Index + 2] << 16) | (pKeSetTimer[Index + 1] << 8) | pKeSetTimer[Index];
-            // wprintf(L"DeltaOffset = %x\n", DeltaOffset);
+          //  wprintf(L"DeltaOffset = %x\n", DeltaOffset);
             DeltaValue = 0xFFFFFFFF00000000;
             DeltaValue += DeltaOffset;
 
-            if (DeltaOffset >= 0x80000000) KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
-            else KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
+            if (DeltaOffset >= 0x80000000) 
+				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
+            else 
+				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
 
-            switch (ValueCount)
-            {
-                case 0:
-                    // wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
-                    pKiWaitNever = KdMagicValue;
-                break;
-                case 1:
-                    // wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
-                    pKiWaitAlways = KdMagicValue;
-                break;
-            }
+			if (g_KiExcaliburData.MajorVersion == 10) { // for Windows 10 1803
+				switch (ValueCount)
+				{
+				case 0:
+					//wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+					pKiWaitNever = KdMagicValue;
+					break;
+				case 1:
+					Index -= sizeof(USHORT) + sizeof(UCHAR) - 1;
+					break;
+				case 2:
+					//wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+					pKiWaitAlways = KdMagicValue;
+					break;
+				}
+			}
 
-            ValueCount += 1;
+			if (g_KiExcaliburData.MajorVersion < 10) { // for Windows 10 1803
+				switch (ValueCount)
+				{
+				case 0:
+					//wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+					pKiWaitNever = KdMagicValue;
+					break;
+				case 1:
+				//	wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+					pKiWaitAlways = KdMagicValue;
+					break;
+				}
+			}
+         ValueCount += 1;
         }
     }
 
@@ -1153,7 +1178,13 @@ KeGetDecodedKdbg(
 
     if (g_KiExcaliburData.MachineType == MACHINE_AMD64)
     {
-        KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");
+      	if (g_KiExcaliburData.MajorVersion < 10) {
+			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");//
+		}
+
+		if (g_KiExcaliburData.MajorVersion == 10) {
+			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimerEx");// for Windows 10 1803
+		}
         if (KeSetTimer == 0ULL) goto CleanUp;
         // wprintf(L"-> KeSetTimer = 0x%I64X\n", KeSetTimer);
 
@@ -1760,7 +1791,7 @@ BYTE PdbFileName[MAX_PATH];
         break;
         case MACHINE_AMD64:
             ImageBase = 0xfffff80000000000ULL;
-            for (Index = 0; Index < 0x10000; Index += 1, ImageBase += PAGE_SIZE)
+            for (Index = 0; Index < 0x1100000; Index += 1, ImageBase += PAGE_SIZE)// need add GetRawFileSize/PAGE_SIZE
             {
                 Ret = MmReadVirtualAddress(Handle,
                                            0ULL,
