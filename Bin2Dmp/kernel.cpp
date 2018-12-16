@@ -78,8 +78,8 @@ ULONGLONG KernelCr3[] = {
     0ULL, // (IA64)
 
     // 0x001a5000ULL // Win 9 // 6.3.6374
-	0x1ad000ULL, //Windows Server 2019 PreBuild 17666 and Windows 10 17666 (1803)
-	0x4d2000ULL, //Windows 10 17666 (1804)
+    0x1ad000ULL, //Windows Server 2019 PreBuild 17666 and Windows 10 17666 (1803)
+    0x4d2000ULL, //Windows 10 17666 (1804)
 };
 
 ULONGLONG KernelKPCR[] = {
@@ -584,15 +584,15 @@ Return Value:
         }
 #ifdef PRO_EDITION
       else if ((VersionId == WINDOWS_NT60_X64) ||
-                 (VersionId == WINDOWS_NT61_X64) ||
-				 (VersionId == WINDOWS_NT10_x64_1803) ||
-				 (VersionId == WINDOWS_NT10_x64_1804)
-				 )
+                (VersionId == WINDOWS_NT61_X64) ||
+                (VersionId == WINDOWS_NT10_x64_1803) ||
+                (VersionId == WINDOWS_NT10_x64_1804)
+                )
         {
             if (!KernelCr3[VersionId]) continue;
 
 #if DEBUG_ENABLED
-                wprintf(L"(VersionId == WINDOWS_NT60_X64 || WINDOWS_NT61_X64)\n");
+            wprintf(L"(VersionId == WINDOWS_NT60_X64 || WINDOWS_NT61_X64)\n");
 #endif
 
             Pa.QuadPart = KernelCr3[VersionId];
@@ -618,7 +618,7 @@ Return Value:
             g_KiExcaliburData.MachineType = MACHINE_AMD64;
 
 #if DEBUG_ENABLED
-                wprintf(L"g_KiExcaliburData.DirectoryTableBase = 0x%I64X;\n", Pa.QuadPart);
+            wprintf(L"g_KiExcaliburData.DirectoryTableBase = 0x%I64X;\n", Pa.QuadPart);
 #endif
 
             if (VersionId == WINDOWS_NT60_X64)
@@ -990,41 +990,40 @@ KeGetTimerValues(
             DeltaValue = 0xFFFFFFFF00000000;
             DeltaValue += DeltaOffset;
 
-            if (DeltaOffset >= 0x80000000) 
-				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
-            else 
-				KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
+            if (DeltaOffset >= 0x80000000) KdMagicValue = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
+            else KdMagicValue = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
 
-			if (g_KiExcaliburData.MajorVersion == 10) { // for Windows 10 1803
-				switch (ValueCount)
-				{
-				case 0:
-					//wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
-					pKiWaitNever = KdMagicValue;
-					break;
-				case 1:
-					Index -= sizeof(USHORT) + sizeof(UCHAR) - 1;
-					break;
-				case 2:
-					//wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
-					pKiWaitAlways = KdMagicValue;
-					break;
-				}
-			}
-
-			if (g_KiExcaliburData.MajorVersion < 10) { // for Windows 10 1803
-				switch (ValueCount)
-				{
-				case 0:
-					//wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
-					pKiWaitNever = KdMagicValue;
-					break;
-				case 1:
-				//	wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
-					pKiWaitAlways = KdMagicValue;
-					break;
-				}
-			}
+            if (g_KiExcaliburData.MajorVersion < 10)
+            { // for Windows 10 1803
+                switch (ValueCount)
+                {
+                    case 0:
+                        //wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+                        pKiWaitNever = KdMagicValue;
+                        break;
+                    case 1:
+                        //	wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+                        pKiWaitAlways = KdMagicValue;
+                        break;
+                }
+            }
+            else if (g_KiExcaliburData.MajorVersion == 10)
+            { // for Windows 10 1803
+                switch (ValueCount)
+                {
+                    case 0:
+                        //wprintf(L"pKiWaitNever = %I64X\n", KdMagicValue);
+                        pKiWaitNever = KdMagicValue;
+                        break;
+                    case 1:
+                        Index -= sizeof(USHORT) + sizeof(UCHAR) - 1;
+                        break;
+                    case 2:
+                        //wprintf(L"pKiWaitAlways = %I64X\n", KdMagicValue);
+                        pKiWaitAlways = KdMagicValue;
+                        break;
+                }
+            }
          ValueCount += 1;
         }
     }
