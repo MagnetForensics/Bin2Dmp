@@ -1,6 +1,5 @@
 /*++
-    Copyright (C) 2008-2010  Matthieu Suiche <http://www.msuiche.net>
-    Copyright (c) 2017 - 2018, Comae Technologies DMCC
+    Copyright (c) Comae Technologies DMCC. All rights reserved.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,8 +1,5 @@
 /*++
-    Copyright (C) 2010 Matthieu Suiche http://www.msuiche.net 
-    Copyright (C) 2010 MoonSols. <http://www.moonsols.com>
-    Copyright (c) 2017 - 2018, Comae Technologies DMCC
-    All rights reserved.
+    Copyright (c) Comae Technologies DMCC. All rights reserved.
 
 Module Name:
 
