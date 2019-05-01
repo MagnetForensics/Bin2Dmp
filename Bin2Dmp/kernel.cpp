@@ -962,6 +962,7 @@ KeGetTimerValues(
     )
 {
     BOOL Ret = FALSE;
+    BOOLEAN IsFound = FALSE;
 
     ULONG DeltaOffset;
     ULONGLONG DeltaValue;
@@ -974,6 +975,8 @@ KeGetTimerValues(
     ULONG64 pKiWaitAlways = 0ULL;
 
     UCHAR pKeSetTimer[0x30] = {0};
+
+    ULONG64 KiSetTimerEx = 0;
 
     Ret = MmReadVirtualAddress(Handle,
                                0ULL,
@@ -1029,7 +1032,31 @@ KeGetTimerValues(
                         break;
                 }
             }
-         ValueCount += 1;
+
+            ValueCount += 1;
+        }
+        else if ((pKeSetTimer[Index] == 0x45) && (pKeSetTimer[Index + 3] == 0xE8) && (ValueCount == 0)) {
+            Index += sizeof(USHORT) + sizeof(UCHAR); // xor r9d, r9d
+            Index += sizeof(UCHAR); // call nt!KiSetTimerEx
+
+            DeltaOffset = (pKeSetTimer[Index + 3] << 24) | (pKeSetTimer[Index + 2] << 16) | (pKeSetTimer[Index + 1] << 8) | pKeSetTimer[Index];
+
+            if (DeltaOffset >= 0x80000000) KiSetTimerEx = KeSetTimer + Index + sizeof(ULONG) - DeltaOffset;
+            else KiSetTimerEx = KeSetTimer + Index + sizeof(ULONG) + DeltaOffset;
+
+            wprintf(L"KiSetTimerEx = %I64X\n", KiSetTimerEx);
+
+            Ret = MmReadVirtualAddress(Handle,
+                0ULL,
+                KiSetTimerEx,
+                pKeSetTimer,
+                sizeof(pKeSetTimer));
+            if (!Ret) goto CleanUp;
+
+            // PeDumpHexa(pKeSetTimer, sizeof(pKeSetTimer));
+
+            Index = 0; // Start over.
+            continue;
         }
     }
 
@@ -1044,7 +1071,7 @@ KeGetTimerValues(
         // wprintf(L"KiWaitNever = %I64X\n", *KiWaitNever);
     }
 
-    if (pKiWaitNever)
+    if (pKiWaitAlways)
     {
         Ret = MmReadVirtualAddress(Handle,
                                    0ULL,
@@ -1054,10 +1081,10 @@ KeGetTimerValues(
         if (!Ret) goto CleanUp;
     }
 
-    if (*KiWaitAlways && *KiWaitNever) Ret = TRUE;
+    if (*KiWaitAlways && *KiWaitNever) IsFound = TRUE;
 
 CleanUp:
-    return Ret;
+    return IsFound;
 }
 
 void
@@ -1182,15 +1209,14 @@ KeGetDecodedKdbg(
 
     if (g_KiExcaliburData.MachineType == MACHINE_AMD64)
     {
-      	if (g_KiExcaliburData.MajorVersion < 10) {
-			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");//
-		}
-
-		if (g_KiExcaliburData.MajorVersion == 10) {
-			KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimerEx");// for Windows 10 1803
-		}
+        if (g_KiExcaliburData.MajorVersion < 10) {
+            KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimer");
+        } else if (g_KiExcaliburData.MajorVersion == 10) {
+            KeSetTimer = PeGetProcAddress(Handle, ImageBase, "KeSetTimerEx");// for Windows 10 1803
+        }
         if (KeSetTimer == 0ULL) goto CleanUp;
-        // wprintf(L"-> KeSetTimer = 0x%I64X\n", KeSetTimer);
+
+        wprintf(L"-> KeSetTimer = 0x%I64X\n", KeSetTimer);
 
         Ret = KeGetTimerValues(Handle, KeSetTimer, &KiWaitNever, &KiWaitAlways);
         if (Ret)
@@ -1208,6 +1234,9 @@ KeGetDecodedKdbg(
                                    KiWaitAlways,
                                    (ImageBase & 0xffffffff00000000),
                                    FALSE);
+        }
+        else {
+            goto CleanUp;
         }
     }
 
@@ -1241,7 +1270,7 @@ KeGetDecodedKdbg(
             if ((DbgDataHeader->List.Blink != DbgDataHeader->List.Flink) ||
                 (DbgDataHeader->OwnerTag != KDBG_TAG))
             {
-                break;
+                continue;
             }
 
             *OutDbgData = (PKDDEBUGGER_DATA64)malloc(DbgDataHeader->Size);
@@ -1266,6 +1295,12 @@ KeGetDecodedKdbg(
             PDBGKD_DEBUG_DATA_HEADER64 DbgDataHeader = NULL;
 
             DbgDataHeader = (PDBGKD_DEBUG_DATA_HEADER64)&Data[i - (sizeof(LIST_ENTRY64)/sizeof(ULONG))];
+
+            if ((DbgDataHeader->List.Blink != DbgDataHeader->List.Flink) ||
+                (DbgDataHeader->OwnerTag != KDBG_TAG))
+            {
+                continue;
+            }
 
             *OutDbgData = (PKDDEBUGGER_DATA64)malloc(DbgDataHeader->Size);
             if (*OutDbgData == NULL) goto CleanUp;
@@ -1519,7 +1554,7 @@ success:
     g_KiExcaliburData.PsActiveProcessHead = DbgData->PsActiveProcessHead;
     g_KiExcaliburData.PspCidTable = DbgData->PspCidTable;
 
-#if DEBUG_ENABLED
+#if TRUE
     wprintf(L"KernelBase = %I64X\n"
             L"MmPfnDatabase = %I64X\n"
             L"PsLoadedModuleList = %I64X\n"

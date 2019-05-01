@@ -658,7 +658,7 @@ Return Value:
 
     RtlZeroMemory(Header64->Comment, sizeof(Header64->Comment));
     strcpy_s(Header64->Comment, sizeof(Header64->Comment),
-        "Hibernation file converted with Comae Toolkit");
+        "File converted with Comae Toolkit");
 
     Offset.QuadPart = 0;
     CacheOffset = 0;
@@ -695,6 +695,9 @@ Return Value:
         ContextVa += (X64_KPROCESSOR_STATE_OFFSET + X64_CONTEXT_OFFSET);
     }
     wprintf(L"nt!KiProcessorBlock.Prcb.Context = 0x%I64X\n", ContextVa);
+    wprintf(L"nt!KdpDataBlockEncodedOffset = 0x%I64X\n", g_KiExcaliburData.KdpDataBlockEncodedOffset);
+    wprintf(L"IsEncodedDbgDataBlock = 0x%d\n", g_KiExcaliburData.IsEncodedDbgDataBlock);
+    wprintf(L"KdDebuggerDataBlock = 0x%I64X\n", g_KiExcaliburData.KdDebuggerDataBlock); 
 
     //
     // Get physical address of the CONTEXT from KPRCB.
