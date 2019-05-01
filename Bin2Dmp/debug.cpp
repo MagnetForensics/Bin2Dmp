@@ -59,7 +59,7 @@ ULONG CacheIndex;
 
     for (CacheIndex = 0; CacheIndex < MAX_CACHED_PAGES; CacheIndex += 1)
     {
-        wprintf(L"#%02d : Pa: 0x%I64X %d P\n",
+        wprintf(L"#%02d : Pa: 0x%I64X %I64d P\n",
                 CacheIndex,
                 MmCachedPages[CacheIndex].Pa.QuadPart,
                 MmCachedPages[CacheIndex].Priority);

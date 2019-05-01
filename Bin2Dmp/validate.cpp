@@ -315,7 +315,7 @@ PVOID Page;
     }
 
     for (EntryIndex = 0;
-         EntryIndex < (PAGE_SIZE / sizeof(*Pml4Entry));
+         EntryIndex < (PAGE_SIZE / sizeof(*Pml4Entry)) / 2; // Sometimes the last entries are messed up so we are only checking the first entries.
          EntryIndex += 1)
     {
         if (/*(Pml4Entry[EntryIndex].Entry.Reserved00 != 0) ||*/
@@ -345,7 +345,7 @@ PVOID Page;
                                         Pml4Entry[EntryIndex].Data.HighPart,
                                         Pml4Entry[EntryIndex].Data.LowPart,
                                         bValidTable);
-            wprintf(L"Res %x\n", Pml4Entry[EntryIndex].Entry.Reserved01);
+            wprintf(L"Res %I64x\n", Pml4Entry[EntryIndex].Entry.Reserved01);
 
             wprintf(L"Present: %x\n"
                     L"ReadWrite: %x\n"

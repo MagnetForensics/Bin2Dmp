@@ -193,16 +193,16 @@ Return Value:
 
 --*/
 {
-PDUMP_HEADER32 Header32;
-#ifdef PRO_EDITION
-PDUMP_HEADER64 Header64;
-#endif
+    PDUMP_HEADER32 Header32;
+    #ifdef PRO_EDITION
+    PDUMP_HEADER64 Header64;
+    #endif
 
-PKDDEBUGGER_DATA64 DbgData;
+    PKDDEBUGGER_DATA64 DbgData;
 
-ULARGE_INTEGER Address;
+    ULARGE_INTEGER Address;
 
-BOOL Ret;
+    BOOL Ret;
 
     Ret = TRUE;
 
@@ -380,7 +380,7 @@ Return Value:
             bValidTable = FALSE;
 
 #if DEBUG_ENABLED
-            wprintf(L"KernelKPCR[VersionId] = %X\n KernelCr3[VersionId] = %X\n",
+            wprintf(L"KernelKPCR[VersionId] = %I64X\n KernelCr3[VersionId] = %I64X\n",
                     KernelKPCR[VersionId],
                     KernelCr3[VersionId]);
 #endif
@@ -725,10 +725,18 @@ success:
 
     if (g_KiExcaliburData.MachineType == MACHINE_AMD64)
     {
-        wprintf(L"Looking for Kernel Base...\n");
+        wprintf(L"Looking for Kernel Base...");
         Ret = KeFindKernelImageBase(Handle);
 
-        if (Ret == FALSE) return Ret;
+        if (Ret == TRUE)
+        {
+            Green(L"Done.\n");
+        }
+        else
+        {
+            Red(L"Failed.\n");
+            return Ret;
+        }
     }
 
     if (bValidTable)
@@ -1496,6 +1504,8 @@ TryAgain:
         }
     }
 
+    if (Ret == FALSE) goto finish;
+
 success:
     g_KiExcaliburData.KdDebuggerDataBlock = Va;
 
@@ -1718,16 +1728,15 @@ Return Value:
 
 --*/
 {
-PUCHAR Page;
+    PUCHAR Page;
 
-ULONGLONG ImageBase;
-ULONG Index;
+    ULONGLONG ImageBase;
+    ULONG Index;
 
-BOOL Ret;
+    BOOL Ret = NULL;
 
-BYTE PdbFileName[MAX_PATH];
-
-    Ret = FALSE;
+    BYTE PdbFileName[MAX_PATH];
+    BOOLEAN IsFound = FALSE;
 
     // Page = LocalAlloc(LPTR, PAGE_SIZE);
     Page = (PUCHAR)malloc(PAGE_SIZE);
@@ -1779,6 +1788,7 @@ BYTE PdbFileName[MAX_PATH];
                             SymLoadForImageBase(Handle, ImageBase, ImageSize);
                             SymDestroy();
 #endif
+                            IsFound = TRUE;
                             goto success;
                         }
                     }
@@ -1830,7 +1840,7 @@ BYTE PdbFileName[MAX_PATH];
                             SymLoadForImageBase(Handle, ImageBase, ImageSize);
                             SymDestroy();
 #endif
-
+                            IsFound = TRUE;
                             goto success;
                         }
                     }
@@ -1844,5 +1854,5 @@ success:
     // LocalFree(Page);
     free(Page);
 
-    return Ret;
+    return IsFound;
 }

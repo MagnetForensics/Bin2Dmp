@@ -895,7 +895,7 @@ MmMemoryRangeArrayv2_x64(
                         Ret = FALSE;
                         InternalErrorCode = TRUE;
 #if DEBUG_ENABLED
-                        wprintf(L"[%d:%d] PageIndex: %d vs PagesCount: %d\n",
+                        wprintf(L"[%d:%d] PageIndex: %I64d vs PagesCount: %I64d\n",
                                 i, RangeArray64->Link.EntryCount,
                                 PageIndex, PagesCount);
 #endif
@@ -1138,7 +1138,7 @@ MmMemoryRangeArrayv3_x64(
                         InternalErrorCode = TRUE;
 
 #if DEBUG_ENABLED
-                        wprintf(L"[%d:%d] PageIndex: %d vs PagesCount: %d\n",
+                        wprintf(L"[%d:%d] PageIndex: %I64d vs PagesCount: %I64d\n",
                                 i, RangeArray64Win7->Link.EntryCount,
                                 PageIndex, PagesCount);
 #endif
